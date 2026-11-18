@@ -1,0 +1,15 @@
+# Datasets and model weights are not committed (too large / downloadable)
+datasets/
+*.pt
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# Ultralytics prediction runs
+runs/
