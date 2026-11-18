@@ -1,9 +1,10 @@
 """Baseline evaluation for CS117 final project (Team 7).
 
-Runs the pretrained YOLO11n (COCO) detector on the football-players-detection
-dataset and measures recall + false positives for two merged classes:
+Runs the pretrained YOLO11n (COCO) detector on the project's soccer dataset
+(football-players-ball-ojdzs; classes ball/player/referee) and measures recall +
+false positives for two merged classes:
 
-    person  <- dataset labels: player, goalkeeper, referee   (COCO class 0)
+    person  <- dataset labels: player, referee (and keeper, if present)  (COCO class 0)
     ball    <- dataset label:  ball                          (COCO class 32, "sports ball")
 
 Matching rules (from the proposal):
@@ -15,9 +16,8 @@ Matching rules (from the proposal):
 Default run: imgsz 640, conf 0.25, on the validation ("dev") split.
 
 Usage:
-    python src/evaluate_baseline.py                       # val split, imgsz 640
-    python src/evaluate_baseline.py --split test
-    python src/evaluate_baseline.py --imgsz 1280 --out results/baseline_dev_1280.json
+    python3 src/evaluate_baseline.py --split valid        # baseline, imgsz 640
+    python3 src/evaluate_baseline.py --split valid --out results/baseline_valid_ojdzs.json
 
 Output: a JSON file in results/ with the measured numbers, plus a printed summary.
 """
@@ -33,7 +33,7 @@ import yaml
 from ultralytics import YOLO
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DATA = REPO_ROOT / "datasets" / "football-players-detection"
+DEFAULT_DATA = REPO_ROOT / "datasets" / "football-players-ball-ojdzs"
 
 # COCO class ids produced by yolo11n.pt that we care about.
 COCO_PERSON = 0
@@ -57,11 +57,19 @@ def load_class_names(data_yaml: Path) -> dict[int, str]:
 
 
 def label_to_group(class_name: str) -> str | None:
-    """Map a dataset label class name to our evaluation group."""
+    """Map a dataset label class name to our evaluation group.
+
+    Handles both dataset variants:
+      - original: ball / goalkeeper / player / referee
+      - 9k fork:  Keeper / another-player / ball / player-white / referee
+    All non-ball person-type labels (any variant of player/keeper/referee)
+    merge into 'person'; 'ball' stays 'ball'.
+    """
     name = class_name.lower()
     if name == "ball":
         return "ball"
-    if name in ("player", "goalkeeper", "referee"):
+    person_keywords = ("player", "keeper", "goalkeeper", "referee")
+    if any(kw in name for kw in person_keywords):
         return "person"
     return None
 
@@ -227,7 +235,7 @@ def main() -> None:
         "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
 
-    out_path = args.out or (REPO_ROOT / "results" / f"baseline_{split_dir.name}.json")
+    out_path = (args.out or (REPO_ROOT / "results" / f"baseline_{split_dir.name}.json")).resolve()
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w") as f:
         json.dump(summary, f, indent=2)
@@ -240,7 +248,11 @@ def main() -> None:
         print(f"  {group:6s}  recall={g['recall']*100:5.1f}%  "
               f"(matched {g['matched']}/{g['gt']}, misses {g['misses']}, "
               f"false positives {g['fp']})")
-    print(f"  saved -> {out_path.relative_to(REPO_ROOT)}")
+    try:
+        shown = out_path.relative_to(REPO_ROOT)
+    except ValueError:
+        shown = out_path
+    print(f"  saved -> {shown}")
     print("=========================================================")
 
 

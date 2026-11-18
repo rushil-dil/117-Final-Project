@@ -1,0 +1,29 @@
+{
+  "model": "yolo11n.pt",
+  "dataset": "football-players-ball-ojdzs",
+  "split": "valid",
+  "num_images": 149,
+  "imgsz": 640,
+  "conf": 0.25,
+  "iou_thresholds": {
+    "person": 0.5,
+    "ball": 0.3
+  },
+  "person": {
+    "gt": 1867,
+    "matched": 1599,
+    "misses": 268,
+    "fp": 404,
+    "pred": 2003,
+    "recall": 0.8565
+  },
+  "ball": {
+    "gt": 120,
+    "matched": 24,
+    "misses": 96,
+    "fp": 3,
+    "pred": 27,
+    "recall": 0.2
+  },
+  "generated_utc": "2026-11-18T04:13:13+00:00"
+}
